@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Comic Sleuth
 
-## Getting Started
+AI-powered comic book scanner and inventory manager. Photograph a comic's front and back covers, and Gemini AI identifies it, estimates its grade and fair market value, and writes a ready-to-paste eBay listing.
 
-First, run the development server:
+## What it does
+
+1. **Scan** — Upload or photograph front + back covers
+2. **Analyze** — Gemini AI identifies the issue, grades condition (CGC scale), estimates value using live market data, and generates an eBay description
+3. **Review** — Check the AI's work in the processing queue
+4. **Store** — Move accepted results into your searchable inventory
+5. **Sell** — Copy the pre-written eBay listing from the inventory detail view
+
+See [OVERVIEW.md](OVERVIEW.md) for full architecture, API reference, and known issues.
+
+## Requirements
+
+- Node.js 20+
+- A [Google AI Studio](https://aistudio.google.com/) API key (free tier works)
+
+## Local setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+GEMINI_API_KEY=your_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev      # http://localhost:3005
+npm run build
+npm start        # production on port 3005
+```
 
-## Learn More
+You can also set or change the API key at any time through the Settings page in the UI — no restart needed.
 
-To learn more about Next.js, take a look at the following resources:
+## Docker setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Create .env.local with your API key first
+docker compose up --build
+# App available at http://localhost:3005
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Data (SQLite database + all images) persists across container rebuilds via the `./data` volume mount.
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js 16** (App Router) + **React 19**
+- **Gemini AI** (`@google/generative-ai`) — comic identification, grading, valuation
+- **SQLite** (`better-sqlite3`) — local inventory database
+- **Sharp** — image compression and EXIF auto-rotation
+- **Tailwind CSS v4** + **Framer Motion**
