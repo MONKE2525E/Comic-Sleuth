@@ -87,15 +87,6 @@ App runs at [http://localhost:3005](http://localhost:3005). The SQLite database 
 
 ---
 
-## Contributors
-
-| | Name | Role |
-|---|---|---|
-| 👤 | [MONKE2525E](https://github.com/MONKE2525E) | Creator & maintainer |
-| 🤖 | [Claude](https://claude.ai) (Anthropic) | AI pair programmer |
-
----
-
 ## Documentation
 
 See [OVERVIEW.md](OVERVIEW.md) for the full architecture, database schema, API reference, and known limitations.
