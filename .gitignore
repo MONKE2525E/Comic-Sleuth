@@ -22,7 +22,12 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+
+# claude code (local-only, never push)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # debug
 npm-debug.log*
