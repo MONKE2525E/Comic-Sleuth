@@ -2,11 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import db from './db';
-import { getGeminiApiKey } from './getApiKey';
-import { COMIC_ANALYSIS_PROMPT } from './geminiPrompt';
+import { getGeminiApiKey, getGeminiPrompt, getMaxRetries } from './settings';
 
 export async function processQueueItem(id: number, frontImagePath: string, backImagePath: string) {
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = getMaxRetries();
   let attempts = 0;
 
   const apiKey = getGeminiApiKey();
@@ -15,6 +14,8 @@ export async function processQueueItem(id: number, frontImagePath: string, backI
       .run('No Gemini API key configured. Add it in Settings or set GEMINI_API_KEY in .env.local.', id);
     return;
   }
+
+  const prompt = getGeminiPrompt();
 
   while (attempts < MAX_RETRIES) {
     try {
@@ -30,7 +31,7 @@ export async function processQueueItem(id: number, frontImagePath: string, backI
       });
 
       const response = await model.generateContent([
-        COMIC_ANALYSIS_PROMPT,
+        prompt,
         { inlineData: { data: frontBuffer.toString('base64'), mimeType: 'image/jpeg' } },
         { inlineData: { data: backBuffer.toString('base64'), mimeType: 'image/jpeg' } },
       ]);

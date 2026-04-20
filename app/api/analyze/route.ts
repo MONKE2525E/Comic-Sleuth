@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
-import { getGeminiApiKey } from '@/lib/getApiKey';
-import { COMIC_ANALYSIS_PROMPT } from '@/lib/geminiPrompt';
+import { getGeminiApiKey, getGeminiPrompt } from '@/lib/settings';
 
 export async function POST(req: Request) {
   try {
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
     });
 
     const response = await model.generateContent([
-      COMIC_ANALYSIS_PROMPT,
+      getGeminiPrompt(),
       { inlineData: frontParts },
       { inlineData: backParts },
     ]);
