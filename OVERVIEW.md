@@ -136,7 +136,7 @@ Manage the Gemini API key. The key is stored in the `settings` SQLite table (key
 
 **SDK:** `@google/generative-ai` — `GoogleGenerativeAI` class with `getGenerativeModel`  
 **Model:** `gemini-3.1-pro-preview`  
-**⚠️ Important:** Do not change the model unless you also revise the grading prompt. The `COMIC_ANALYSIS_PROMPT` in `lib/geminiPrompt.ts` is tuned for this model's behavior, output format, and reasoning. Switching to a different model (e.g., `gemini-2.5-pro`, `gemini-4`) without updating the prompt will likely break JSON parsing or produce invalid grades.
+**⚠️ Important:** Do not change the model unless you also revise the grading prompt. The `COMIC_ANALYSIS_PROMPT` in `lib/geminiPrompt.ts` is tuned for this model's behavior, output format, and reasoning. Switching to a different model (e.g., `gemini-2.5-pro)` without updating the prompt will likely break JSON parsing or produce invalid grades.
 
 **Tools:** `[{ googleSearch: {} }]` — enables Google Search grounding so Gemini can look up current eBay sold prices
 
