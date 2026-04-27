@@ -25,7 +25,12 @@
 Thumbs.db
 *.pem
 
-# claude code (local-only, never push)
+# AI Assistants
+.gemini/
+.geminiignore
+.codex/
+.cursor/
+.aider*
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
