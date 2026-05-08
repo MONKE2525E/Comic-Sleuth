@@ -209,7 +209,7 @@ export default function InventoryPage() {
                 <div className="aspect-[3/2] w-full bg-zinc-950 relative overflow-hidden flex items-center justify-center">
                   {item.frontImage ? (
                     <img
-                      src={`/api${item.frontImage}`} 
+                      src={item.frontImage}
                       alt={item.title}
                       className={`w-full h-full object-cover transition-all ${isSelected ? 'opacity-100 scale-105' : 'opacity-80 group-hover:opacity-100'}`}
                       loading="lazy"
