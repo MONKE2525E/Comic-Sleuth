@@ -3,9 +3,14 @@ import {
   SETTING_KEYS,
   DEFAULT_MODEL,
   DEFAULT_PROMPT,
+  DEFAULT_CHAT_PROMPT,
+  DEFAULT_EBAY_DRAFT_PROMPT,
   DEFAULT_MAX_RETRIES,
   getGeminiModel,
   getGeminiPrompt,
+  getChatPrompt,
+  getEbayDraftPrompt,
+  getEbayToken,
   getMaxRetries,
   setSetting,
 } from '@/lib/settings';
@@ -18,19 +23,36 @@ function getRawApiKey(): string {
   return row?.value || process.env.GEMINI_API_KEY || '';
 }
 
+function getRawEbayToken(): string {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(SETTING_KEYS.ebayToken) as
+    | { value: string }
+    | undefined;
+  return row?.value || process.env.EBAY_USER_TOKEN || '';
+}
+
 export async function GET() {
   try {
     const key = getRawApiKey();
     const masked = key.length > 4 ? '•'.repeat(key.length - 4) + key.slice(-4) : key ? '••••' : '';
+
+    const ebayTokenRaw = getRawEbayToken();
+    const ebayMasked = ebayTokenRaw.length > 4 ? '•'.repeat(ebayTokenRaw.length - 4) + ebayTokenRaw.slice(-4) : ebayTokenRaw ? '••••' : '';
+
     return NextResponse.json({
       hasKey: !!key,
       masked,
+      hasEbayToken: !!ebayTokenRaw,
+      ebayMasked,
       model: getGeminiModel(),
       prompt: getGeminiPrompt(),
+      chatPrompt: getChatPrompt(),
+      ebayDraftPrompt: getEbayDraftPrompt(),
       maxRetries: getMaxRetries(),
       defaults: {
         model: DEFAULT_MODEL,
         prompt: DEFAULT_PROMPT,
+        chatPrompt: DEFAULT_CHAT_PROMPT,
+        ebayDraftPrompt: DEFAULT_EBAY_DRAFT_PROMPT,
         maxRetries: DEFAULT_MAX_RETRIES,
       },
     });
@@ -42,10 +64,13 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { apiKey, model, prompt, maxRetries } = body as {
+    const { apiKey, ebayToken, model, prompt, chatPrompt, ebayDraftPrompt, maxRetries } = body as {
       apiKey?: unknown;
+      ebayToken?: unknown;
       model?: unknown;
       prompt?: unknown;
+      chatPrompt?: unknown;
+      ebayDraftPrompt?: unknown;
       maxRetries?: unknown;
     };
 
@@ -54,6 +79,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'API key must be a non-empty string.' }, { status: 400 });
       }
       setSetting(SETTING_KEYS.apiKey, apiKey.trim());
+    }
+
+    if (ebayToken !== undefined) {
+      if (typeof ebayToken !== 'string' || !ebayToken.trim()) {
+        return NextResponse.json({ error: 'eBay User Token must be a non-empty string.' }, { status: 400 });
+      }
+      setSetting(SETTING_KEYS.ebayToken, ebayToken.trim());
     }
 
     if (model !== undefined) {
@@ -68,6 +100,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Prompt must be a non-empty string.' }, { status: 400 });
       }
       setSetting(SETTING_KEYS.prompt, prompt.trim());
+    }
+
+    if (chatPrompt !== undefined) {
+      if (typeof chatPrompt !== 'string' || !chatPrompt.trim()) {
+        return NextResponse.json({ error: 'Chat Prompt must be a non-empty string.' }, { status: 400 });
+      }
+      setSetting(SETTING_KEYS.chatPrompt, chatPrompt.trim());
+    }
+
+    if (ebayDraftPrompt !== undefined) {
+      if (typeof ebayDraftPrompt !== 'string' || !ebayDraftPrompt.trim()) {
+        return NextResponse.json({ error: 'eBay Draft Prompt must be a non-empty string.' }, { status: 400 });
+      }
+      setSetting(SETTING_KEYS.ebayDraftPrompt, ebayDraftPrompt.trim());
     }
 
     if (maxRetries !== undefined) {

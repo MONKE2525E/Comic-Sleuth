@@ -19,13 +19,14 @@ export async function POST(req: Request) {
       INSERT INTO listings (
         title, issueNumber, publisher, year, gradeEstimate, gradingNotes,
         valueEstimate, keyFeatures, suggestedSKU, ebayDescription,
-        frontImage, backImage
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        frontImage, frontImageHighRes, backImage, backImageHighRes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       title, issueNumber?.toString(), publisher, year?.toString(),
       gradeEstimate?.toString(), gradingNotes, valueEstimate,
       keyFeatures, suggestedSKU, ebayDescription,
-      frontImagePath?.compressed ?? null, backImagePath?.compressed ?? null
+      frontImagePath?.compressed ?? null, frontImagePath?.highRes ?? null,
+      backImagePath?.compressed ?? null, backImagePath?.highRes ?? null
     );
 
     return NextResponse.json({ success: true, id: result.lastInsertRowid });
@@ -39,9 +40,18 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('q');
+    const idsParam = searchParams.get('ids');
 
-    let listings;
-    if (search) {
+    let listings: any[] = [];
+    if (idsParam) {
+      const ids = idsParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        const placeholders = ids.map(() => '?').join(',');
+        listings = db.prepare(`SELECT * FROM listings WHERE id IN (${placeholders}) ORDER BY createdAt DESC`).all(...ids);
+      } else {
+        listings = [];
+      }
+    } else if (search) {
       listings = db.prepare(`
         SELECT * FROM listings
         WHERE title LIKE ? OR publisher LIKE ? OR suggestedSKU LIKE ?

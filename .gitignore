@@ -53,3 +53,4 @@ next-env.d.ts
 # comic sleuth
 /data/
 /public/uploads/
+roadmap.md

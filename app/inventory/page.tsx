@@ -1,18 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Package, DollarSign, ExternalLink, X, Tag, Calendar, Info, CheckCircle2, Trash2, ArchiveRestore } from "lucide-react";
+import { Search, Package, DollarSign, ExternalLink, X, Tag, Calendar, Info, CheckCircle2, Trash2, ShoppingBag, CheckSquare, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function InventoryPage() {
+  const router = useRouter();
   const [listings, setListings] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedComic, setSelectedComic] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  // eBay Selection State
+  const [isEbayMode, setIsEbayMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const fetchListings = async (query = "") => {
     setLoading(true);
@@ -48,12 +54,54 @@ export default function InventoryPage() {
       toast.success("Comic moved to trash (kept for 7 days).");
       setSelectedComic(null);
       setShowConfirmDelete(false);
+      // Remove from selection if deleted
+      setSelectedIds(prev => prev.filter(id => id !== selectedComic.id));
       fetchListings(searchQuery);
     } catch (err: any) {
       toast.error(err.message || "Failed to delete comic.");
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const toggleSelection = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the modal
+    setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(i => i !== id);
+      } else {
+        if (prev.length >= 100) {
+          toast.error("You can only select up to 100 comics at a time for eBay drafting.");
+          return prev;
+        }
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === listings.length || selectedIds.length === 100) {
+      // Deselect all
+      setSelectedIds([]);
+    } else {
+      // Select up to 100
+      const idsToSelect = listings.slice(0, 100).map(item => item.id);
+      setSelectedIds(idsToSelect);
+      if (listings.length > 100) {
+        toast.info("Selected the first 100 comics (limit reached).");
+      }
+    }
+  };
+
+  const handleEbayClick = () => {
+    if (selectedIds.length === 0) {
+      toast.error("Please select at least one comic to draft for eBay.");
+      return;
+    }
+    
+    // Store selected IDs in sessionStorage or URL so the eBay draft page can read them
+    sessionStorage.setItem('ebayDraftIds', JSON.stringify(selectedIds));
+    router.push('/ebay/drafting');
   };
 
   return (
@@ -76,10 +124,48 @@ export default function InventoryPage() {
             <Search className="absolute left-4 top-3.5 w-5 h-5 text-zinc-500" />
             <button type="submit" className="hidden" />
           </form>
-          
-          <Link href="/trash" className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-zinc-900/50 px-4 py-3 rounded-2xl border border-zinc-800">
-            <Trash2 className="w-4 h-4" /> Trash
-          </Link>
+
+          <div className="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto">
+            <Link href="/trash" className="flex-1 md:flex-none text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-zinc-900/50 px-4 py-3 rounded-2xl border border-zinc-800">
+              <Trash2 className="w-4 h-4" /> Trash
+            </Link>
+
+            {isEbayMode ? (
+              <>
+                {listings.length > 0 && (
+                  <button 
+                    onClick={handleSelectAll}
+                    className="flex-1 md:flex-none text-indigo-400 hover:text-indigo-300 transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-indigo-500/10 px-4 py-3 rounded-2xl border border-indigo-500/20"
+                  >
+                    {selectedIds.length > 0 ? (
+                      <><CheckSquare className="w-4 h-4" /> Deselect All</>
+                    ) : (
+                      <><CheckSquare className="w-4 h-4" /> Select All</>
+                    )}
+                  </button>
+                )}
+                <button 
+                  onClick={handleEbayClick}
+                  className="flex-1 md:flex-none text-white hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-blue-700 px-4 py-3 rounded-2xl border border-blue-600"
+                >
+                  <ShoppingBag className="w-4 h-4" /> Draft to eBay {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+                </button>
+                <button 
+                  onClick={() => { setIsEbayMode(false); setSelectedIds([]); }}
+                  className="flex-1 md:flex-none text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-zinc-800 px-4 py-3 rounded-2xl border border-zinc-700"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={() => setIsEbayMode(true)}
+                className="flex-1 md:flex-none text-white hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-blue-700 px-4 py-3 rounded-2xl border border-blue-600"
+              >
+                <ShoppingBag className="w-4 h-4" /> eBay
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -93,57 +179,83 @@ export default function InventoryPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {listings.map((item, idx) => (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              key={item.id}
-              onClick={() => setSelectedComic(item)}
-              className="bg-zinc-900/50 border border-zinc-800 rounded-3xl overflow-hidden group hover:border-indigo-500/50 transition-all cursor-pointer shadow-lg hover:shadow-indigo-500/10"
-            >
-              <div className="aspect-[3/2] w-full bg-zinc-950 relative overflow-hidden flex items-center justify-center">
-                {item.frontImage ? (
-                  <img
-                    src={`/api${item.frontImage}`} 
-                    alt={item.title}
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="text-zinc-700 font-bold uppercase tracking-widest text-xs">No Image</div>
+          {listings.map((item, idx) => {
+            const isSelected = selectedIds.includes(item.id);
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                key={item.id}
+                onClick={() => setSelectedComic(item)}
+                className={`bg-zinc-900/50 border rounded-3xl overflow-hidden group transition-all cursor-pointer shadow-lg relative ${isSelected ? 'border-blue-500 shadow-blue-500/20' : 'border-zinc-800 hover:border-indigo-500/50 hover:shadow-indigo-500/10'}`}
+              >
+                {/* Selection Checkbox Overlay */}
+                {isEbayMode && (
+                  <div 
+                    onClick={(e) => toggleSelection(item.id, e)}
+                    className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-black/40 backdrop-blur border border-white/10 hover:bg-black/60 transition-colors"
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-5 h-5 text-blue-400" />
+                    ) : (
+                      <Square className="w-5 h-5 text-zinc-400 group-hover:text-white" />
+                    )}
+                  </div>
                 )}
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <span className="bg-black/60 backdrop-blur text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
-                    {item.publisher}
-                  </span>
-                  <span className="bg-indigo-500/80 backdrop-blur text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                    Grade {item.gradeEstimate}
-                  </span>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2 gap-4">
-                  <h3 className="text-xl font-black text-white leading-tight">
-                    {item.title} <span className="text-zinc-500 text-lg">#{item.issueNumber}</span>
-                  </h3>
-                  <div className="flex items-center text-green-400 font-black whitespace-nowrap text-lg">
-                    <DollarSign className="w-5 h-5" />
-                    {item.valueEstimate}
+
+                <div className="aspect-[3/2] w-full bg-zinc-950 relative overflow-hidden flex items-center justify-center">
+                  {item.frontImage ? (
+                    <img
+                      src={`/api${item.frontImage}`} 
+                      alt={item.title}
+                      className={`w-full h-full object-cover transition-all ${isSelected ? 'opacity-100 scale-105' : 'opacity-80 group-hover:opacity-100'}`}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="text-zinc-700 font-bold uppercase tracking-widest text-xs">No Image</div>
+                  )}
+                  <div className="absolute top-4 left-4 flex flex-wrap gap-2 pr-12">
+                    <span className="bg-black/60 backdrop-blur text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 shadow-lg">
+                      {item.publisher}
+                    </span>
+                    <span className="bg-indigo-500/80 backdrop-blur text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+                      Grade {item.gradeEstimate}
+                    </span>
+                    {item.ebayStatus && (
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border backdrop-blur shadow-lg ${
+                        item.ebayStatus === 'Listed' ? 'bg-green-500/80 text-white border-green-400' :
+                        item.ebayStatus === 'Error' ? 'bg-red-500/80 text-white border-red-400' :
+                        'bg-blue-500/80 text-white border-blue-400'
+                      }`}>
+                        {item.ebayStatus === 'Listed' ? <CheckCircle2 className="w-3 h-3" /> : item.ebayStatus}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <p className="text-zinc-400 text-sm mb-4 line-clamp-2 leading-relaxed">{item.keyFeatures}</p>
-                <div className="flex items-center justify-between pt-4 border-t border-zinc-800/80">
-                  <div className="text-xs font-mono font-bold text-zinc-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
-                    {item.suggestedSKU}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2 gap-4">
+                    <h3 className="text-xl font-black text-white leading-tight">
+                      {item.title} <span className="text-zinc-500 text-lg">#{item.issueNumber}</span>
+                    </h3>
+                    <div className="flex items-center text-green-400 font-black whitespace-nowrap text-lg">
+                      <DollarSign className="w-5 h-5" />
+                      {item.valueEstimate}
+                    </div>
                   </div>
-                  <div className="text-indigo-400 font-black text-xs uppercase tracking-widest flex items-center gap-1 group-hover:text-indigo-300">
-                    View <ExternalLink className="w-3 h-3" />
+                  <p className="text-zinc-400 text-sm mb-4 line-clamp-2 leading-relaxed">{item.keyFeatures}</p>
+                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800/80">
+                    <div className="text-xs font-mono font-bold text-zinc-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
+                      {item.suggestedSKU}
+                    </div>
+                    <div className="text-indigo-400 font-black text-xs uppercase tracking-widest flex items-center gap-1 group-hover:text-indigo-300">
+                      View <ExternalLink className="w-3 h-3" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
 

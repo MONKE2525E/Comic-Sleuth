@@ -25,6 +25,8 @@ db.exec(`
     backImage TEXT,
     frontImageHighRes TEXT,
     backImageHighRes TEXT,
+    ebayItemId TEXT,
+    ebayStatus TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -61,9 +63,17 @@ db.exec(`
     backImage TEXT,
     frontImageHighRes TEXT,
     backImageHighRes TEXT,
+    ebayItemId TEXT,
+    ebayStatus TEXT,
     createdAt DATETIME,
     deletedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Migrations
+try { db.prepare('ALTER TABLE listings ADD COLUMN ebayItemId TEXT').run(); } catch (e) {}
+try { db.prepare('ALTER TABLE listings ADD COLUMN ebayStatus TEXT').run(); } catch (e) {}
+try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayItemId TEXT').run(); } catch (e) {}
+try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayStatus TEXT').run(); } catch (e) {}
 
 export default db;
