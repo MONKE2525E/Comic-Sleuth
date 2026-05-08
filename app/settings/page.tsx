@@ -101,7 +101,7 @@ export default function SettingsPage() {
       toast.success("eBay token saved.");
       setHasEbayToken(true);
       const preview = newEbayToken.trim();
-      setEbayMasked("•".repeat(Math.max(preview.length - 4, 4)) + preview.slice(-4));
+      setEbayMasked(preview.length > 4 ? '•'.repeat(preview.length - 4) + preview.slice(-4) : preview ? '••••' : '');
       setNewEbayToken("");
     } catch (err: any) {
       toast.error(err.message || "Failed to save eBay token.");
