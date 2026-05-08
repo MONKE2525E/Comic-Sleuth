@@ -308,7 +308,7 @@ export default function EbayDraftingPage() {
                     {/* Thumbnail */}
                     <div className="w-16 h-24 rounded-lg bg-zinc-950 overflow-hidden shrink-0 relative border border-zinc-800">
                       {comic.frontImage && (
-                        <Image src={`/api${comic.frontImage}`} alt={comic.title} fill className="object-cover opacity-80" />
+                        <Image src={comic.frontImage} alt={comic.title} fill className="object-cover opacity-80" />
                       )}
                       {isDrafted && (
                         <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-0.5">
