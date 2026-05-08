@@ -35,9 +35,14 @@ export async function GET() {
     const key = getRawApiKey();
     const masked = key.length > 4 ? '•'.repeat(key.length - 4) + key.slice(-4) : key ? '••••' : '';
 
+    const ebayToken = getRawEbayToken();
+    const ebayMasked = ebayToken.length > 4 ? '•'.repeat(ebayToken.length - 4) + ebayToken.slice(-4) : ebayToken ? '••••' : '';
+
     return NextResponse.json({
       hasKey: !!key,
       masked,
+      hasEbayToken: !!ebayToken,
+      ebayMasked,
       model: getGeminiModel(),
       prompt: getGeminiPrompt(),
       chatPrompt: getChatPrompt(),
@@ -112,6 +117,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'maxRetries must be an integer between 1 and 10.' }, { status: 400 });
       }
       validatedUpdates.push({ key: SETTING_KEYS.maxRetries, value: String(Math.floor(parsed)) });
+    }
+
+    if (ebayToken !== undefined) {
+      if (typeof ebayToken !== 'string' || !ebayToken.trim()) {
+        return NextResponse.json({ error: 'eBay token must be a non-empty string.' }, { status: 400 });
+      }
+      validatedUpdates.push({ key: SETTING_KEYS.ebayToken, value: ebayToken.trim() });
     }
 
     if (validatedUpdates.length > 0) {

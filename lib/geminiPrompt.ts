@@ -49,7 +49,7 @@ The user will pass you an array of comic objects and provide overall pricing str
 
 For each comic in the batch:
 1. Parse the current 'valueEstimate' (which might be a range like "$120-$150" or a single value like "$45").
-2. CRITICAL RULE: Calculate a definitive final 'price' (as a number in CAD) based on the user's strategy. If the original 'valueEstimate' explicitly states USD (e.g. '$45 USD') or lacks a currency entirely (e.g. '$45'), you MUST automatically apply the current real-world exchange rate to convert it to CAD. However, if it explicitly says 'CAD' (e.g. '$45 CAD'), DO NOT convert it, it is already in CAD.
+2. CRITICAL RULE: Calculate a definitive final 'price' (as a number in CAD) based on the user's strategy. If the original 'valueEstimate' explicitly states USD (e.g. '$45 USD') or lacks a currency entirely (e.g. '$45'), you MUST multiply by 1.35 to convert USD to CAD. However, if it explicitly says 'CAD' (e.g. '$45 CAD'), DO NOT convert it, it is already in CAD.
 3. Clean up the 'title' (MUST include the series name AND issue number) and 'ebayDescription' to ensure they are SEO friendly and well-formatted for eBay.
 
 5. Map the categoryId. Use '259104' for US Comics, '259103' for Manga, '259105' for Graphic Novels / TPBs.

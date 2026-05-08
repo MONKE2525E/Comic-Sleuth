@@ -71,7 +71,9 @@ export async function POST(req: Request) {
 
         let parsedPrice = Number(draft.price);
         if (isNaN(parsedPrice) || parsedPrice < 0.99) {
+           const originalPrice = draft.price;
            parsedPrice = 0.99; // Fallback to eBay's minimum
+           errors.push(`Comic ${draft.id} Warning: Price adjusted from "${originalPrice}" to $0.99 (eBay minimum)`);
         }
 
         const itemId = await createEbayListing(token, {
