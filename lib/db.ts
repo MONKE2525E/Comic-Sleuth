@@ -71,9 +71,9 @@ db.exec(`
 `);
 
 // Migrations
-try { db.prepare('ALTER TABLE listings ADD COLUMN ebayItemId TEXT').run(); } catch (e) {}
-try { db.prepare('ALTER TABLE listings ADD COLUMN ebayStatus TEXT').run(); } catch (e) {}
-try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayItemId TEXT').run(); } catch (e) {}
-try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayStatus TEXT').run(); } catch (e) {}
+try { db.prepare('ALTER TABLE listings ADD COLUMN ebayItemId TEXT').run(); } catch (e: any) { if (!e.message.includes('duplicate column name')) throw e; }
+try { db.prepare('ALTER TABLE listings ADD COLUMN ebayStatus TEXT').run(); } catch (e: any) { if (!e.message.includes('duplicate column name')) throw e; }
+try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayItemId TEXT').run(); } catch (e: any) { if (!e.message.includes('duplicate column name')) throw e; }
+try { db.prepare('ALTER TABLE deleted_listings ADD COLUMN ebayStatus TEXT').run(); } catch (e: any) { if (!e.message.includes('duplicate column name')) throw e; }
 
 export default db;

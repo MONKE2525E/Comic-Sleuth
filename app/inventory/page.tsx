@@ -137,7 +137,7 @@ export default function InventoryPage() {
                     onClick={handleSelectAll}
                     className="flex-1 md:flex-none text-indigo-400 hover:text-indigo-300 transition-colors flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs whitespace-nowrap bg-indigo-500/10 px-4 py-3 rounded-2xl border border-indigo-500/20"
                   >
-                    {selectedIds.length > 0 ? (
+                    {selectedIds.length > 0 && (selectedIds.length === listings.length || selectedIds.length === 100) ? (
                       <><CheckSquare className="w-4 h-4" /> Deselect All</>
                     ) : (
                       <><CheckSquare className="w-4 h-4" /> Select All</>
@@ -192,7 +192,9 @@ export default function InventoryPage() {
               >
                 {/* Selection Checkbox Overlay */}
                 {isEbayMode && (
-                  <div 
+                  <button 
+                    aria-label={isSelected ? "Deselect comic" : "Select comic"}
+                    aria-pressed={isSelected}
                     onClick={(e) => toggleSelection(item.id, e)}
                     className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-black/40 backdrop-blur border border-white/10 hover:bg-black/60 transition-colors"
                   >
@@ -201,7 +203,7 @@ export default function InventoryPage() {
                     ) : (
                       <Square className="w-5 h-5 text-zinc-400 group-hover:text-white" />
                     )}
-                  </div>
+                  </button>
                 )}
 
                 <div className="aspect-[3/2] w-full bg-zinc-950 relative overflow-hidden flex items-center justify-center">

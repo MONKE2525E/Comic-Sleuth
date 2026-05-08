@@ -7,9 +7,11 @@ let updatedCount = 0;
 
 const updateStmt = db.prepare('UPDATE listings SET valueEstimate = ? WHERE id = ?');
 
+const USD_TO_CAD_RATE = 1.35;
+
 for (const comic of comics) {
-  if (!comic.valueEstimate || comic.valueEstimate.includes('CAD') || comic.valueEstimate.includes('USD')) {
-    // Skip if empty, or already explicitly labeled
+  if (!comic.valueEstimate || comic.valueEstimate.includes('CAD')) {
+    // Skip if empty, or already explicitly labeled as CAD
     continue;
   }
   
@@ -18,14 +20,15 @@ for (const comic of comics) {
   const match = comic.valueEstimate.match(regex);
   if (!match) continue;
   
-  let newEstimate = comic.valueEstimate;
+  // Strip 'USD' string out if it exists so we just append CAD cleanly later
+  let newEstimate = comic.valueEstimate.replace(/\s?USD/gi, '');
   
   // Convert all matched numbers
   for (const m of match) {
     const numStr = m.replace('$', '');
     const num = parseFloat(numStr);
     if (!isNaN(num)) {
-      const cadNum = (num * 1.35).toFixed(2);
+      const cadNum = (num * USD_TO_CAD_RATE).toFixed(2);
       newEstimate = newEstimate.replace(m, `$${cadNum}`);
     }
   }

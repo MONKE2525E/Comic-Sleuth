@@ -3,12 +3,18 @@ import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 import { getGeminiApiKey, getGeminiModel, getChatPrompt, getMaxRetries } from '@/lib/settings';
 import db from '@/lib/db';
 
+interface ChatMessage {
+  role: string;
+  content: string;
+  mentionedComics?: any[];
+}
+
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Messages array is required.' }, { status: 400 });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: 'Messages array is required and must not be empty.' }, { status: 400 });
     }
 
     const apiKey = getGeminiApiKey();
@@ -18,7 +24,7 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash', // Use the latest flash model for chat
+      model: getGeminiModel() || 'gemini-2.5-flash',
       systemInstruction: getChatPrompt(),
       generationConfig: {
         responseMimeType: 'application/json',
@@ -32,7 +38,7 @@ export async function POST(req: Request) {
     // Transform the messages array for Gemini
     // We want the final message to be passed into generateContent
     // But since this is a chat, we could use startChat
-    let history = messages.slice(0, -1).map((msg: any) => ({
+    let history = messages.slice(0, -1).map((msg: ChatMessage) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));

@@ -14,7 +14,8 @@ export const SETTING_KEYS = {
   chatPrompt: 'gemini_chat_prompt',
   ebayDraftPrompt: 'gemini_ebay_draft_prompt',
   maxRetries: 'gemini_max_retries',
-  ebayToken: 'ebay_user_token',
+  shippingCost: 'ebay_shipping_cost',
+  postalCode: 'ebay_postal_code',
 } as const;
 
 function getSetting(key: string): string | null {
@@ -38,7 +39,7 @@ export function getGeminiApiKey(): string {
 }
 
 export function getEbayToken(): string {
-  return getSetting(SETTING_KEYS.ebayToken) || process.env.EBAY_USER_TOKEN || '';
+  return process.env.EBAY_USER_TOKEN || '';
 }
 
 export function getGeminiModel(): string {
@@ -62,4 +63,12 @@ export function getMaxRetries(): number {
   if (!raw) return DEFAULT_MAX_RETRIES;
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_RETRIES;
+}
+
+export function getShippingCost(): string {
+  return getSetting(SETTING_KEYS.shippingCost) || '5.00';
+}
+
+export function getPostalCode(): string {
+  return getSetting(SETTING_KEYS.postalCode) || 'M4B 1B3';
 }

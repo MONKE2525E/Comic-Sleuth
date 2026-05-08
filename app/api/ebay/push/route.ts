@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getEbayToken } from '@/lib/settings';
 import db from '@/lib/db';
 import { uploadImageToEbay, createEbayListing } from '@/lib/ebay';
+import { getShippingCost, getPostalCode } from '@/lib/settings';
 
 export async function POST(req: Request) {
   try {
@@ -43,6 +44,13 @@ export async function POST(req: Request) {
         const comic = db.prepare('SELECT * FROM listings WHERE id = ?').get(draft.id) as any;
         if (!comic) throw new Error(`Comic ${draft.id} not found in database.`);
 
+        if (comic.ebayStatus === 'Listed' || comic.ebayStatus === 'ListingInProgress') {
+          throw new Error(`Comic ${draft.id} is already ${comic.ebayStatus}. Skipping to prevent duplicate.`);
+        }
+
+        // Lock it immediately
+        updateErrorStmt.run('ListingInProgress', draft.id);
+
         const pictureUrls: string[] = [];
         
         if (comic.frontImageHighRes || comic.frontImage) {
@@ -76,10 +84,12 @@ export async function POST(req: Request) {
           grade: comic.gradeEstimate,
           categoryId: draft.categoryId || '259104',
           conditionId: draft.conditionId || '4000',
+          shippingCost: getShippingCost(),
+          postalCode: getPostalCode(),
           pictureUrls
         });
 
-        const formattedPrice = `$${parsedPrice.toFixed(2)}`;
+        const formattedPrice = `$${parsedPrice.toFixed(2)} CAD`;
         updateStmt.run(draft.ebayDescription, formattedPrice, itemId, 'Listed', draft.id);
         successCount++;
       } catch (err: any) {

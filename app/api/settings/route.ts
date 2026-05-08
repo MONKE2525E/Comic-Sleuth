@@ -35,14 +35,9 @@ export async function GET() {
     const key = getRawApiKey();
     const masked = key.length > 4 ? '•'.repeat(key.length - 4) + key.slice(-4) : key ? '••••' : '';
 
-    const ebayTokenRaw = getRawEbayToken();
-    const ebayMasked = ebayTokenRaw.length > 4 ? '•'.repeat(ebayTokenRaw.length - 4) + ebayTokenRaw.slice(-4) : ebayTokenRaw ? '••••' : '';
-
     return NextResponse.json({
       hasKey: !!key,
       masked,
-      hasEbayToken: !!ebayTokenRaw,
-      ebayMasked,
       model: getGeminiModel(),
       prompt: getGeminiPrompt(),
       chatPrompt: getChatPrompt(),
@@ -74,46 +69,41 @@ export async function POST(req: Request) {
       maxRetries?: unknown;
     };
 
+    const validatedUpdates: { key: string; value: string }[] = [];
+
     if (apiKey !== undefined) {
       if (typeof apiKey !== 'string' || !apiKey.trim()) {
         return NextResponse.json({ error: 'API key must be a non-empty string.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.apiKey, apiKey.trim());
-    }
-
-    if (ebayToken !== undefined) {
-      if (typeof ebayToken !== 'string' || !ebayToken.trim()) {
-        return NextResponse.json({ error: 'eBay User Token must be a non-empty string.' }, { status: 400 });
-      }
-      setSetting(SETTING_KEYS.ebayToken, ebayToken.trim());
+      validatedUpdates.push({ key: SETTING_KEYS.apiKey, value: apiKey.trim() });
     }
 
     if (model !== undefined) {
       if (typeof model !== 'string' || !model.trim()) {
         return NextResponse.json({ error: 'Model must be a non-empty string.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.model, model.trim());
+      validatedUpdates.push({ key: SETTING_KEYS.model, value: model.trim() });
     }
 
     if (prompt !== undefined) {
       if (typeof prompt !== 'string' || !prompt.trim()) {
         return NextResponse.json({ error: 'Prompt must be a non-empty string.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.prompt, prompt.trim());
+      validatedUpdates.push({ key: SETTING_KEYS.prompt, value: prompt.trim() });
     }
 
     if (chatPrompt !== undefined) {
       if (typeof chatPrompt !== 'string' || !chatPrompt.trim()) {
         return NextResponse.json({ error: 'Chat Prompt must be a non-empty string.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.chatPrompt, chatPrompt.trim());
+      validatedUpdates.push({ key: SETTING_KEYS.chatPrompt, value: chatPrompt.trim() });
     }
 
     if (ebayDraftPrompt !== undefined) {
       if (typeof ebayDraftPrompt !== 'string' || !ebayDraftPrompt.trim()) {
         return NextResponse.json({ error: 'eBay Draft Prompt must be a non-empty string.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.ebayDraftPrompt, ebayDraftPrompt.trim());
+      validatedUpdates.push({ key: SETTING_KEYS.ebayDraftPrompt, value: ebayDraftPrompt.trim() });
     }
 
     if (maxRetries !== undefined) {
@@ -121,7 +111,17 @@ export async function POST(req: Request) {
       if (!Number.isFinite(parsed) || parsed < 1 || parsed > 10) {
         return NextResponse.json({ error: 'maxRetries must be an integer between 1 and 10.' }, { status: 400 });
       }
-      setSetting(SETTING_KEYS.maxRetries, String(Math.floor(parsed)));
+      validatedUpdates.push({ key: SETTING_KEYS.maxRetries, value: String(Math.floor(parsed)) });
+    }
+
+    if (validatedUpdates.length > 0) {
+      const updateStmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+      const transaction = db.transaction((updates: { key: string; value: string }[]) => {
+        for (const update of updates) {
+          updateStmt.run(update.key, update.value);
+        }
+      });
+      transaction(validatedUpdates);
     }
 
     return NextResponse.json({ success: true });

@@ -15,17 +15,18 @@ const DraftResponseSchema = z.object({
   }))
 });
 
+const RequestSchema = z.object({
+  messages: z.array(z.any()).min(1),
+  comics: z.array(z.any()).min(1).max(10)
+});
+
 export async function POST(req: Request) {
   try {
-    const { messages, comics } = await req.json();
-
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Messages array is required.' }, { status: 400 });
+    const validation = RequestSchema.safeParse(await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid request: ' + validation.error.message }, { status: 400 });
     }
-
-    if (!comics || !Array.isArray(comics)) {
-      return NextResponse.json({ error: 'Comics array is required.' }, { status: 400 });
-    }
+    const { messages, comics } = validation.data;
 
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
@@ -104,8 +105,10 @@ export async function POST(req: Request) {
     const requestedIds = comicsPayload.map((c: any) => c.id);
     const returnedIds = parsedResponse.comics.map((c: any) => c.id);
     const missingIds = requestedIds.filter((id: number) => !returnedIds.includes(id));
-    if (missingIds.length > 0) {
-      throw new Error(`AI dropped comics with IDs: ${missingIds.join(', ')}. Please refine your prompt and try again.`);
+    const extraIds = returnedIds.filter((id: number) => !requestedIds.includes(id));
+    
+    if (missingIds.length > 0 || extraIds.length > 0) {
+      throw new Error(`AI returned mismatched comics. Missing: [${missingIds.join(', ')}]. Extra: [${extraIds.join(', ')}]. Please refine your prompt and try again.`);
     }
 
     return NextResponse.json(parsedResponse);

@@ -73,6 +73,10 @@ export default function RootLayout({
             <BarChart2 className="w-6 h-6" />
             <span className="text-[10px] font-bold uppercase tracking-widest">Stats</span>
           </Link>
+          <Link href="/settings" className="flex flex-col items-center gap-1 text-zinc-400 hover:text-indigo-400 transition-colors">
+            <Settings className="w-6 h-6" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Settings</span>
+          </Link>
         </nav>
 
       </body>
