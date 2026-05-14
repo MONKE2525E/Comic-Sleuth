@@ -1,0 +1,11 @@
+services:
+  comic-sleuth:
+    build: .
+    ports:
+      - "3005:3005"
+    env_file:
+      - .env.local
+    volumes:
+      - ./data:/app/data
+      - ./data/uploads:/app/public/uploads
+    restart: unless-stopped
